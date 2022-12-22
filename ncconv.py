@@ -7,16 +7,27 @@ import netCDF4 as nc
 
 
 class NCConverter:
-    def __init__(self, band, ts, options={}):
+    def __init__(
+            self,
+            band,
+            ts,
+            src_template,
+            dst_template,
+            options={}
+    ):
+        """
+        src_template should include {ts} like:
+        wrfout3/wrfout_d01_{ts}
+
+        dst_template should include both {ts} and {band} like:
+        nc/wrfout_d01_{band}_{ts}.nc
+        """
         self.band = band
         self.ts = ts
         self.options = {}
 
-        '''Rule for source file name'''
-        self.src_path = f"wrfout3/wrfout_d01_{ts}"
-
-        '''Rule for output file name'''
-        self.dst_path = f"nc/wrfout_d01_{self.band}_{ts}.nc"
+        self.src_path = src_template.format(ts=ts)
+        self.dst_path = dst_template.format(ts=ts, band=band)
 
         if "units" in options:
             self.options["units"] = options["units"]

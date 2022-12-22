@@ -14,21 +14,32 @@ from renderer import Renderer
 load_dotenv()
 
 TILES_DESTINATION = os.getenv("TILES_DESTINATION")
+MODEL_SOURCE = os.getenv("MODEL_SOURCE")
+BAND_NETCDF = os.getenv("BAND_NETCDF")
+
 TEMP_NC = os.getenv("TEMP_NC", "nc")
 assert TILES_DESTINATION
+assert MODEL_SOURCE
+assert BAND_NETCDF
 
 
-def make_tiles(time_string):
+def make_tiles(time_string, src_template, dst_template):
     band = "REFL_10CM"
-    conv = NCConverter(band, time_string, {
-        'units': 'dBz',
-        'standart_name': 'reflectivity'
-    })
+    conv = NCConverter(
+        band,
+        time_string,
+        src_template,
+        dst_template,
+        {
+            'units': 'dBz',
+            'standart_name': 'reflectivity'
+        }
+    )
     conv.run()
 
     renderer = Renderer(
         tile_folder=f"{TILES_DESTINATION}/{band}/{time_string}",
-        src_file=f"{TEMP_NC}/wrfout_d01_{band}_{time_string}.nc",
+        src_file=BAND_NETCDF.format(ts=time_string, band=band),
         max_zoom=8,
         bbox=(48.0, 1.0, 54.0, 8.0)
     )
@@ -46,7 +57,7 @@ def iterate_73():
 
         time_string = f"2022-10-{dd:02d}_{hh:02d}_{m:02d}_00"
         print(time_string)
-        make_tiles(time_string)
+        make_tiles(time_string, MODEL_SOURCE, BAND_NETCDF)
 
 
 # make_tiles("2022-10-23_17_30_00")
