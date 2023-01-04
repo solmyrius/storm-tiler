@@ -1,0 +1,13 @@
+{
+  "band": {
+    "name": "T2"
+  },
+  "grid_file": "/var/www/puzyrkov.com/storm/wrfout3/wrfout_d01_{ts}",
+  "nc_data": {
+    "filename": "/var/www/puzyrkov.com/storm/nc/temp2/{ts}.nc",
+    "variable": "t2",
+    "units": "C",
+    "standart_name": "temp2"
+  },
+  "style": "t2.json"
+}

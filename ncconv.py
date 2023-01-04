@@ -39,6 +39,16 @@ class NCConverter:
         else:
             self.options["standard_name"] = "value"
 
+        if "variable" in options:
+            self.options["variable"] = options["variable"]
+        else:
+            self.options["variable"] = "variable"
+
+        if "layer3d" in self.options:
+            self.options["layer3d"] = self.options["layer3d"]
+        else:
+            self.options["layer3d"] = None
+
     def run(self):
 
         src = nc.Dataset(self.src_path, 'r', format='NETCDF4')
@@ -46,7 +56,7 @@ class NCConverter:
         src_t = src["XTIME"][:]
         src_lon_0 = src["XLONG"][:]
         src_lat_0 = src["XLAT"][:]
-        refl_ds = src[self.band][:]
+        band_ds = src[self.band][:]
 
         src_lon = src_lon_0[0][0]
 
@@ -55,9 +65,12 @@ class NCConverter:
         for ll in src_lat_0[0]:
             src_lat.append(ll[0])
 
-        src_refl_0 = refl_ds[0]
-        # src_refl = src_refl_0[len(src_refl_0)-1]
-        src_refl = src_refl_0[0]
+        band_time0 = band_ds[0]
+
+        if self.options["layer3d"] is not None:
+            src_band = band_time0[self.options["layer3d"]]
+        else:
+            src_band = band_time0
 
         size_lat = len(src_lat)
         size_lng = len(src_lon)
@@ -70,7 +83,7 @@ class NCConverter:
         dd_lats = dst.createVariable('lat', 'f4', ('lat',))
         dd_lons = dst.createVariable('lon', 'f4', ('lon',))
 
-        value = dst.createVariable('refl', 'f4', ('lat', 'lon',))
+        value = dst.createVariable(self.options["variable"], 'f4', ('lat', 'lon',))
         value.units = self.options["units"]
         value.standard_name = self.options["standard_name"]
 
@@ -79,6 +92,9 @@ class NCConverter:
 
         dd_lats[:] = src_lat[:]
         dd_lons[:] = src_lon[:]
-        value[: , :] = src_refl[:]
+        value[: , :] = src_band[:]
+
+        if self.band == "T2":
+            value[: , :] = value[:] - 273.15
 
         dst.close()

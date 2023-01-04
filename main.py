@@ -40,7 +40,7 @@ def make_tiles(time_string, src_template, dst_template):
     renderer = Renderer(
         tile_folder=f"{TILES_DESTINATION}/{band}/{time_string}",
         src_file=BAND_NETCDF.format(ts=time_string, band=band),
-        max_zoom=8,
+        max_zoom=10,
         bbox=(48.0, 1.0, 54.0, 8.0)
     )
     renderer.run()

@@ -1,3 +1,4 @@
 python_dotenv
 netCDF4
 Magics
+flask
