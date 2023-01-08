@@ -3,54 +3,49 @@ Extracts one data band from NetCDF file and creates small .nc file
 """
 
 import os
+import time
 import netCDF4 as nc
+from styler import Styler
 
 
 class NCConverter:
-    def __init__(
-            self,
-            band,
-            ts,
-            src_template,
-            dst_template,
-            options={}
-    ):
-        """
-        src_template should include {ts} like:
-        wrfout3/wrfout_d01_{ts}
-
-        dst_template should include both {ts} and {band} like:
-        nc/wrfout_d01_{band}_{ts}.nc
-        """
-        self.band = band
-        self.ts = ts
+    def __init__(self, styler, layer_id):
         self.options = {}
+        self.styler = styler
+        self.layer_id = layer_id
 
-        self.src_path = src_template.format(ts=ts)
-        self.dst_path = dst_template.format(ts=ts, band=band)
+        self.src_path = styler.get_grid_path(layer_id)
+        self.dst_path = styler.get_nc_path(layer_id)
+        self.lock_path = styler.get_nc_lock_path(self.layer_id)
 
-        if "units" in options:
-            self.options["units"] = options["units"]
+        os.makedirs(os.path.dirname(self.dst_path), exist_ok=True)
+
+        band_data = styler.get_band_data()
+        nc_data = styler.get_nc_data()
+
+        self.band = band_data["name"]
+
+        if "units" in nc_data:
+            self.options["units"] = nc_data["units"]
         else:
             self.options["units"] = "Unknown"
 
-        if "standard_name" in options:
-            self.options["standard_name"] = options["standard_name"]
+        if "standard_name" in nc_data:
+            self.options["standard_name"] = nc_data["standard_name"]
         else:
             self.options["standard_name"] = "value"
 
-        if "variable" in options:
-            self.options["variable"] = options["variable"]
+        if "variable" in nc_data:
+            self.options["variable"] = nc_data["variable"]
         else:
             self.options["variable"] = "variable"
 
-        if "layer3d" in self.options:
-            self.options["layer3d"] = self.options["layer3d"]
+        if "layer3d" in band_data:
+            self.options["layer3d"] = band_data["layer3d"]
         else:
             self.options["layer3d"] = None
 
-    def run(self):
-
+    def build_band_nc(self):
         src = nc.Dataset(self.src_path, 'r', format='NETCDF4')
 
         src_t = src["XTIME"][:]
@@ -75,7 +70,16 @@ class NCConverter:
         size_lat = len(src_lat)
         size_lng = len(src_lon)
 
-        dst = nc.Dataset(self.dst_path, 'w', format='NETCDF4')
+        """
+        If file exists it means that it is processed now by the parallel
+        thread. We just wait a bit and exit
+        """
+        try:
+            dst = nc.Dataset(self.dst_path, 'w', format='NETCDF4')
+        except PermissionError:
+            time.sleep(1)
+            print("Parallel processing wait/exit")
+            return
 
         dd_lat = dst.createDimension('lat', size_lat)
         dd_lon = dst.createDimension('lon', size_lng)
@@ -98,3 +102,20 @@ class NCConverter:
             value[: , :] = value[:] - 273.15
 
         dst.close()
+
+    def build_with_lock(self):
+        f = open(self.lock_path, 'w')
+        f.write("1")
+        f.close()
+        self.build_band_nc()
+        os.unlink(self.lock_path)
+
+    def run(self):
+        tick = 0
+        while os.path.exists(self.lock_path) and tick < 10:
+            time.sleep(0.5)
+            tick = tick + 1
+        if os.path.exists(self.lock_path):
+            return 1
+        self.build_with_lock()
+        return 0

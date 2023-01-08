@@ -1,15 +1,16 @@
 {
   "band": {
-    "name": "T2"
+    "name": "REFL_10CM",
+    "layer3d": 0
   },
   "grid_file": {
     "path": "/var/www/puzyrkov.com/storm/wrfout3",
     "file_tpl": "wrfout_d01_{ts}"
   },
   "nc_data": {
-    "variable": "t2",
-    "units": "C",
-    "standart_name": "temp2"
+    "variable": "refl",
+    "units": "dBz",
+    "standart_name": "reflectivity"
   },
-  "style": "t2.json"
+  "style": "refl.json"
 }
