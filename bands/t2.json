@@ -3,7 +3,7 @@
     "name": "T2"
   },
   "grid_file": {
-    "path": "/var/www/puzyrkov.com/storm/wrfout3",
+    "path": "/home/ndata/wrfout3",
     "file_tpl": "wrfout_d01_{ts}"
   },
   "nc_data": {

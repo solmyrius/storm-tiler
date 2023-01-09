@@ -24,8 +24,12 @@ class DataSource:
         styler = self.bands[band_id]
         layer_ids = styler.list_layers()
         for layer_id in layer_ids:
-            layers.append({
-                'layer_id': layer_id,
-                'tile_path': 'tiles/'+band_id+'/'+layer_id+'/{z}/{x}/{y}.png'
-            })
+            nc_path = styler.get_nc_path(layer_id)
+            nc_lock_path = styler.get_nc_lock_path(layer_id)
+            if os.path.exists(nc_path):
+                if not os.path.exists(nc_lock_path):
+                    layers.append({
+                        'layer_id': layer_id,
+                        'tile_path': 'tiles/'+band_id+'/'+layer_id+'/{z}/{x}/{y}.png'
+                    })
         return layers
