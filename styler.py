@@ -71,6 +71,7 @@ class Styler:
         tpl = self.style["grid_file"]["file_tpl"]
         patten = r"" + tpl.replace('{ts}', '(.*)')
         dir_list = os.listdir(path)
+        dir_list.sort()
         for fname in dir_list:
             mt = re.search(patten, fname)
             if mt:
