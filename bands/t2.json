@@ -1,6 +1,8 @@
 {
   "band": {
-    "name": "T2"
+    "name": "T2",
+    "math.add": -273.15,
+    "math.mult": 1.0
   },
   "grid_file": {
     "path": "/home/ndata/wrfout3",

@@ -98,8 +98,15 @@ class NCConverter:
         dd_lons[:] = src_lon[:]
         value[: , :] = src_band[:]
 
+        band_data = self.styler.get_band_data()
         if self.band == "T2":
-            value[: , :] = value[:] - 273.15
+            band_data["math.add"] = -273.15
+
+        if "math.add" in band_data:
+            value[: , :] = value[:] + band_data["math.add"]
+
+        if "math.mult" in band_data:
+            value[: , :] = value[:] * band_data["math.mult"]
 
         dst.close()
 

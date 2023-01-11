@@ -42,4 +42,4 @@ def band_layers(band_id):
 
 if __name__ == "__main__":
     app.debug = True
-    app.run("0.0.0.0", 5005)
+    app.run("0.0.0.0", 5005, threaded=True)
