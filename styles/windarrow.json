@@ -1,0 +1,8 @@
+{
+    "wind_field_type": "arrows",
+    "wind_arrow_thickness": 2,
+    "wind_thinning_factor": 16.0,
+    "wind_thinning_z_automation": 1,
+    "wind_arrow_calm_below": 0.1,
+    "wind_arrow_colour": "yellow"
+}

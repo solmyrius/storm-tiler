@@ -1,0 +1,16 @@
+{
+  "band": {
+    "name": "WSPD10MAX",
+    "math.mult": 3.6
+  },
+  "grid_file": {
+    "path": "wrtest",
+    "file_tpl": "wrfout_d01_{ts}"
+  },
+  "nc_data": {
+    "variable": "w10m",
+    "units": "ms-1",
+    "standart_name": "w10m"
+  },
+  "style": "w10m.json"
+}

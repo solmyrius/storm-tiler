@@ -4,7 +4,7 @@
     "layer3d": 0
   },
   "grid_file": {
-    "path": "/home/ndata/wrfout3",
+    "path": "wrtest",
     "file_tpl": "wrfout_d01_{ts}"
   },
   "nc_data": {

@@ -15,6 +15,7 @@ class Styler:
 
         self.netcdf_bands = os.getenv("NETCDF_BANDS", "")
         self.tiles_destination = os.getenv("TILES_DESTINATION", "")
+        self.data_source_dir = os.getenv("DATA_SOURCE_DIR", "")
         self.zoom_auto = int(os.getenv("ZOOM_AUTO", 0))
         self.zoom_max = int(os.getenv("ZOOM_MAX", 0))
 
@@ -48,6 +49,7 @@ class Styler:
     '''Path to source model file'''
     def get_grid_path(self, layer_id):
         return os.path.join(
+            self.data_source_dir,
             self.style["grid_file"]["path"],
             self.style["grid_file"]["file_tpl"].format(ts=layer_id)
         )
@@ -67,7 +69,10 @@ class Styler:
     '''
     def list_layers(self):
         layers = []
-        path = self.style["grid_file"]["path"]
+        path = os.path.join(
+            self.data_source_dir,
+            self.style["grid_file"]["path"]
+        )
         tpl = self.style["grid_file"]["file_tpl"]
         patten = r"" + tpl.replace('{ts}', '(.*)')
         dir_list = os.listdir(path)

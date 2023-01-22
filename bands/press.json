@@ -1,0 +1,16 @@
+{
+  "band": {
+    "name": "AFWA_MSLP",
+    "math.mult": 0.01
+  },
+  "grid_file": {
+    "path": "wrtest",
+    "file_tpl": "wrfout_d01_{ts}"
+  },
+  "nc_data": {
+    "variable": "pressure",
+    "units": "Pa",
+    "standart_name": "pressure"
+  },
+  "style": "pressure.json"
+}

@@ -1,0 +1,8 @@
+{
+    "wind_field_type": "flags",
+    "wind_flag_thickness": 2,
+    "wind_thinning_factor": 32.0,
+    "wind_thinning_z_automation": 1,
+    "wind_flag_calm_below": 0.1,
+    "wind_flag_colour": "yellow"
+}

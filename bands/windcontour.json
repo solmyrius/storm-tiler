@@ -1,0 +1,16 @@
+{
+  "band": {
+    "type": "scalar",
+    "name": "WSPD10MAX"
+  },
+  "grid_file": {
+    "path": "wrtest",
+    "file_tpl": "wrfout_d01_{ts}"
+  },
+  "nc_data": {
+    "variable": "wind",
+    "units": "m s-1",
+    "standart_name": "wind_speed"
+  },
+  "style": "windcontour.json"
+}

@@ -1,0 +1,33 @@
+{
+  "contour": "on",
+  "contour_hilo": "off",
+  "contour_label": "off",
+  "contour_level_selection_type": "list",
+  "contour_line_colour": "black",
+  "contour_line_thickness": 1,
+  "contour_shade": "on",
+  "contour_level_list": [
+	5.0,
+	6.0,
+	7.0,
+	8.0,
+	10.0,
+	12.0,
+	15.0,
+	20.0
+  ],
+
+  "contour_shade_colour_list": [
+	"#ffff00",
+	"#a8e800",
+	"#5dd100",
+	"#20b900",
+	"#00a210",
+	"#008a34",
+	"#00734b"
+  ],
+  "contour_shade_colour_method": "list",
+  "contour_shade_method": "area_fill",
+  "grib_missing_value_indicator": -9999,
+  "contour_highlight": "off"
+}

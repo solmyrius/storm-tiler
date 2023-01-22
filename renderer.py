@@ -22,7 +22,6 @@ class LayerRenderer:
     def render_tile(self, path, z, x, y):
 
         bbox = tile_zxy(z, x, y)
-        print(bbox, flush=True)
         if not self.in_window(bbox):
             return
 
@@ -35,21 +34,46 @@ class LayerRenderer:
 
         mmap = self.tile_settings(bbox)
         macro_output = self.macro_output(path)
-        params_render = {
-            "netcdf_filename": nc_file,
-            "netcdf_value_variable": nc_data["variable"]
-        }
 
-        contours = self.contours_style()
+        band_data = self.styler.get_band_data()
 
-        render_data = []
-        render_data.append(macro.mnetcdf(**params_render))
-        render_data.append(contours)
         args = [
             macro_output,
             mmap,
         ]
-        args += render_data
+
+        if "type" in band_data and band_data["type"] == "winds":
+
+            params_source = {
+                "netcdf_filename": nc_file,
+                "netcdf_x_component_variable": "u",
+                "netcdf_y_component_variable": "v"
+            }
+            mnetcdf = macro.mnetcdf(**params_source)
+
+            j = self.styler.get_style()
+            if "wind_thinning_z_automation" in j and j["wind_thinning_z_automation"]:
+                z_dif = 7 - z
+                j["wind_thinning_factor"] = j["wind_thinning_factor"] * pow(2, z_dif/1.2)
+                if j["wind_thinning_factor"] < 1.0:
+                    j["wind_thinning_factor"] = 1.0
+            mwinds = macro.mwind(**j)
+
+            args.append(mnetcdf)
+            args.append(mwinds)
+
+        else:
+            params_source = {
+                "netcdf_filename": nc_file,
+                "netcdf_value_variable": nc_data["variable"]
+            }
+            mnetcdf = macro.mnetcdf(**params_source)
+            j = self.styler.get_style()
+            mcontours = macro.mcont(**j)
+
+            args.append(mnetcdf)
+            args.append(mcontours)
+
         macro.plot(*args)
 
     def render_all(self, max_zoom):
@@ -114,8 +138,3 @@ class LayerRenderer:
             output_width=256,
             output_name=tile_path,
         )
-
-    def contours_style(self):
-        j = self.styler.get_style()
-        contours = macro.mcont(**j)
-        return contours
