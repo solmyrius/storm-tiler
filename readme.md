@@ -12,4 +12,16 @@ Main settings are read from the system environment
 
 ### Installation
 
+System components:
+
+Magics:
+
+`apt-get install magics++`
+
+WRF-Python, requires fortran compiler:
+
+`apt-get install gfortran`
+
+Python dependencies install:
+
 `python -m pip install -r requirements.txt`

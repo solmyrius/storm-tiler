@@ -3,8 +3,12 @@ Extracts one data band from NetCDF file and creates small .nc file
 """
 
 import os
+import numpy as np
+import xarray as xr
 import time
+import math
 import netCDF4 as nc
+from wrf import getvar
 from styler import Styler
 
 
@@ -23,13 +27,9 @@ class NCConverter:
         self.nc_src = None
         self.nc_dst = None
 
-    def var_1band(self):
+    def var_band(self):
         band_data = self.styler.get_band_data()
         return band_data["name"]
-
-    def var_2band(self):
-        band_data = self.styler.get_band_data()
-        return band_data["name-u"], band_data["name-v"]
 
     def layer3d(self):
         band_data = self.styler.get_band_data()
@@ -76,31 +76,14 @@ class NCConverter:
 
         if "type" in band_data and band_data["type"] == "winds":
             self.copy_dims(
-                src_lat="XLAT_U",
-                src_lng="XLONG_U",
-                dst_lat="lat_u",
-                dst_lng="lon_u"
+                src_lat="XLAT",
+                src_lng="XLONG",
+                dst_lat="lat",
+                dst_lng="lon"
             )
-            self.copy_dims(
-                src_lat="XLAT_V",
-                src_lng="XLONG_V",
-                dst_lat="lat_v",
-                dst_lng="lon_v"
-            )
-            band_u, band_v = self.var_2band()
-            self.copy_databand(
-                src_name=band_u,
-                dst_name="u",
-                dst_standartname=self.var_standart_name()+"_u",
+            self.copy_wrf_winds(
                 dst_units=self.var_units(),
-                dims=('lat_u', 'lon_u',)
-            )
-            self.copy_databand(
-                src_name=band_v,
-                dst_name="v",
-                dst_standartname=self.var_standart_name()+"_v",
-                dst_units=self.var_units(),
-                dims=('lat_v', 'lon_v',)
+                dims=('lat', 'lon',)
             )
             self.nc_dst.close()
         else:
@@ -111,7 +94,7 @@ class NCConverter:
                 dst_lng="lon"
             )
             self.copy_databand(
-                src_name=self.var_1band(),
+                src_name=self.var_band(),
                 dst_name=self.var_name(),
                 dst_standartname=self.var_standart_name(),
                 dst_units=self.var_units(),
@@ -175,83 +158,52 @@ class NCConverter:
         if "math.mult" in band_data:
             value[: , :] = value[:] * band_data["math.mult"]
 
-    def build_1band_nc(self):
-
-        band_ds = self.nc_src[self.var_1band()][:]
-        band_time0 = band_ds[0]
-
-        layer3d = self.layer3d()
-        if layer3d is not None:
-            src_band = band_time0[layer3d]
-        else:
-            src_band = band_time0
-
-        value = self.nc_dst.createVariable(
-            self.var_name(),
-            'f4',
-            ('lat', 'lon',)
-        )
-        value.units = self.var_units()
-        value.standard_name = self.var_standart_name()
-
-        value[: , :] = src_band[:]
-
-        band_data = self.styler.get_band_data()
-
-        if "math.add" in band_data:
-            value[: , :] = value[:] + band_data["math.add"]
-
-        if "math.mult" in band_data:
-            value[: , :] = value[:] * band_data["math.mult"]
-
-        self.nc_dst.close()
-
-    def build_2band_nc(self):
-
-        band_u, band_v = self.var_2band()
-
-        band_u_ds = self.nc_src[band_u][:]
-        band_v_ds = self.nc_src[band_v][:]
-        band_u_time0 = band_u_ds[0]
-        band_v_time0 = band_v_ds[0]
+    def copy_wrf_winds(self, dst_units, dims):
+        ua = getvar(self.nc_src, "ua")
+        va = getvar(self.nc_src, "va")
 
         layer3d = self.layer3d()
         if layer3d is not None:
-            src_band_u = band_u_time0[layer3d]
-            src_band_v = band_v_time0[layer3d]
+            src_band_u = ua[layer3d]
+            src_band_v = va[layer3d]
         else:
-            src_band_u = band_u_time0
-            src_band_v = band_v_time0
+            src_band_u = ua[0]
+            src_band_v = va[0]
 
         value_u = self.nc_dst.createVariable(
             'u',
             'f4',
-            ('lat', 'lon',)
+            dims
         )
+        value_u.units = dst_units
+        value_u.standard_name = 'wind_u'
+
         value_v = self.nc_dst.createVariable(
             'v',
             'f4',
-            ('lat', 'lon',)
+            dims
         )
-        value_u.units = self.var_units()
-        value_u.standard_name = self.var_standart_name()+"_u"
-        value_v.units = self.var_units()
-        value_v.standard_name = self.var_standart_name()+"_v"
+        value_v.units = dst_units
+        value_v.standard_name = 'wind_v'
 
-        value_u[: , :] = src_band_u[:]
         value_v[: , :] = src_band_v[:]
+        value_u[: , :] = src_band_u[:]
 
         band_data = self.styler.get_band_data()
-
         if "math.add" in band_data:
-            value_u[: , :] = value_u[:] + band_data["math.add"]
             value_v[: , :] = value_v[:] + band_data["math.add"]
 
         if "math.mult" in band_data:
             value_u[: , :] = value_u[:] * band_data["math.mult"]
-            value_v[: , :] = value_v[:] * band_data["math.mult"]
 
-        self.nc_dst.close()
+        value_abs = self.nc_dst.createVariable(
+            'wind',
+            'f4',
+            dims
+        )
+        value_abs.units = dst_units
+        value_abs.standard_name = 'wind'
+        value_abs[: , :] = np.sqrt(value_u[:]**2 + value_v[:]**2)
 
     def build_with_lock(self):
         f = open(self.lock_path, 'w')

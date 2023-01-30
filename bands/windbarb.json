@@ -1,8 +1,7 @@
 {
   "band": {
     "type": "winds",
-    "name-u": "U",
-    "name-v": "V",
+    "display": "vector",
     "layer3d": 0
   },
   "grid_file": {

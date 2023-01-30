@@ -42,7 +42,7 @@ class LayerRenderer:
             mmap,
         ]
 
-        if "type" in band_data and band_data["type"] == "winds":
+        if "display" in band_data and band_data["display"] == "vector":
 
             params_source = {
                 "netcdf_filename": nc_file,
