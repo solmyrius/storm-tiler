@@ -1,0 +1,15 @@
+{
+  "band": {
+    "type": "helicity"
+  },
+  "grid_file": {
+    "path": "wrtest",
+    "file_tpl": "wrfout_d01_{ts}"
+  },
+  "nc_data": {
+    "variable": "srh",
+    "units": "meter**2 / second**2",
+    "standart_name": "Storm relative helicity"
+  },
+  "style": "srh.json"
+}

@@ -23,12 +23,13 @@ class TilePreparer:
         bands = self.ds.list_bands()
         for band_id in bands:
             styler = bands[band_id]
-            layer_ids = styler.list_layers()
-            for layer_id in layer_ids:
-                nc_file = styler.get_nc_path(layer_id)
-                if not os.path.exists(nc_file):
-                    self.create_nc(styler, layer_id)
-                    self.render_auto_levels(band_id, layer_id, styler.zoom_auto)
+            if styler.preparer_batch == "common":
+                layer_ids = styler.list_layers()
+                for layer_id in layer_ids:
+                    nc_file = styler.get_nc_path(layer_id)
+                    if not os.path.exists(nc_file):
+                        self.create_nc(styler, layer_id)
+                        self.render_auto_levels(band_id, layer_id, styler.zoom_auto)
 
 
 tp = TilePreparer()

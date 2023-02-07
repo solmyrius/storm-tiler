@@ -23,6 +23,13 @@ class Styler:
             f = open(f"bands/{style_name}.json", "r")
             self.style = json.load(f)
 
+    @property
+    def preparer_batch(self):
+        if "type" in self.style["band"] and self.style["band"]["type"] == "helicity":
+            return "helicity"
+        else:
+            return "common"
+
     def get_band_data(self):
         return self.style["band"]
 
@@ -41,7 +48,10 @@ class Styler:
 
     '''Path to intermediate cache file created for one band'''
     def get_nc_path(self, layer_id):
-        return self.netcdf_bands.format(band=self.style_name, ts=layer_id)+".nc"
+        if self.preparer_batch == "helicity":
+            return self.netcdf_bands.format(band="helicity", ts=layer_id)+".nc"
+        else:
+            return self.netcdf_bands.format(band=self.style_name, ts=layer_id)+".nc"
 
     def get_nc_lock_path(self, layer_id):
         return self.netcdf_bands.format(band=self.style_name, ts=layer_id)+".txt"

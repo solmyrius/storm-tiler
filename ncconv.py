@@ -8,6 +8,8 @@ import xarray as xr
 import time
 import math
 import netCDF4 as nc
+import metpy.calc
+from metpy.units import units
 from wrf import getvar
 from styler import Styler
 
@@ -26,6 +28,7 @@ class NCConverter:
 
         self.nc_src = None
         self.nc_dst = None
+        self.dst_dims = None
 
     def var_band(self):
         band_data = self.styler.get_band_data()
@@ -74,25 +77,28 @@ class NCConverter:
         self.nc_src = nc.Dataset(self.src_path, 'r', format='NETCDF4')
         band_data = self.styler.get_band_data()
 
+        self.copy_dims(
+            src_lat="XLAT",
+            src_lng="XLONG",
+            dst_lat="lat",
+            dst_lng="lon"
+        )
+
         if "type" in band_data and band_data["type"] == "winds":
-            self.copy_dims(
-                src_lat="XLAT",
-                src_lng="XLONG",
-                dst_lat="lat",
-                dst_lng="lon"
-            )
             self.copy_wrf_winds(
                 dst_units=self.var_units(),
                 dims=('lat', 'lon',)
             )
-            self.nc_dst.close()
-        else:
-            self.copy_dims(
-                src_lat="XLAT",
-                src_lng="XLONG",
-                dst_lat="lat",
-                dst_lng="lon"
+        elif "type" in band_data and band_data["type"] == "helicity":
+            self.copy_helicity(
+                dims=('lat', 'lon',)
             )
+        elif "type" in band_data and band_data["type"] == "compute":
+            self.copy_plugin(
+                plugin=band_data["plugin"],
+                dims=('lat', 'lon',)
+            )
+        else:
             self.copy_databand(
                 src_name=self.var_band(),
                 dst_name=self.var_name(),
@@ -100,7 +106,7 @@ class NCConverter:
                 dst_units=self.var_units(),
                 dims=('lat', 'lon',)
             )
-            self.nc_dst.close()
+        self.nc_dst.close()
 
     def copy_dims(self, src_lat, src_lng, dst_lat, dst_lng):
 
@@ -128,6 +134,8 @@ class NCConverter:
 
         dd_lats[:] = src_lat[:]
         dd_lons[:] = src_lon[:]
+
+        self.dst_dims = ('lat', 'lon',)
 
     def copy_databand(self, src_name, dst_name, dst_standartname, dst_units, dims):
 
@@ -204,6 +212,117 @@ class NCConverter:
         value_abs.units = dst_units
         value_abs.standard_name = 'wind'
         value_abs[: , :] = np.sqrt(value_u[:]**2 + value_v[:]**2)
+
+    def copy_helicity(self, dims):
+        th1 = time.time()
+        value_srh = self.nc_dst.createVariable(
+            'srh',
+            'f4',
+            dims
+        )
+        value_srh.units = "meter ** 2 / second ** 2"
+
+        value_sc = self.nc_dst.createVariable(
+            'sc',
+            'f4',
+            dims
+        )
+        value_sc.units = "dimensionless"
+
+        ua = getvar(self.nc_src, "ua")
+        va = getvar(self.nc_src, "va")
+
+        """ Height at mass center h_tet """
+        xr_data = xr.open_dataset(self.src_path)
+        geopot = (xr_data["PH"]+xr_data["PHB"])*units('m**2/sec**2')
+        h = metpy.calc.geopotential_to_height(geopot)
+        h0 = h[0]
+
+        t00 = xr_data["T00"][0]
+        t = xr_data["T"][0]
+
+        p = xr_data["P"] + xr_data["PB"]
+        p = p[0]
+
+        mu_cape = xr_data["AFWA_CAPE_MU"][0].to_numpy()
+        mu_cape_u = mu_cape * units("J/kg")
+
+        for i in range(value_srh.shape[0]):
+            for j in range(value_srh.shape[1]):
+
+                # Storm relative helicity SRH
+
+                h_col = h0[:, i, j]
+                u_col = ua[:, i, j]  # U-wind component
+                v_col = va[:, i, j]  # V-wind component
+                h_col_s1 = h_col.shift(bottom_top_stag=-1)
+                h_tet = (h_col[0:-1:]+h_col_s1[0:-1:])/2  # Height at mass center
+
+                srh_m = metpy.calc.storm_relative_helicity(
+                    h_tet,
+                    u_col,
+                    v_col,
+                    depth=3 * units.km
+                )
+                srh_mm = srh_m[2].magnitude  # SRH from metpy
+
+                # Supercell composite
+
+                p_col = p[:, i, j]
+
+                shear = metpy.calc.bulk_shear(
+                    p_col * units("Pa"),
+                    u_col,
+                    v_col
+                )
+                eshear = math.sqrt(
+                    shear[0].magnitude**2 + shear[1].magnitude**2
+                )*units("meter / second")
+
+                sc = metpy.calc.supercell_composite(
+                    mucape=mu_cape_u[i, j],
+                    effective_storm_helicity=srh_mm*units("meter**2 / second**2"),
+                    effective_shear=eshear
+                )
+                sc_mm = sc[0].magnitude
+
+                value_srh[i, j] = srh_mm
+                value_sc[i, j] = sc_mm
+
+                """ For EHI """
+                """
+                tc_col = t[:, i, j] + t00 - 273.15
+
+                x1 = 17.269 * tc_col[:]
+                x2 = 237.3 + tc_col[:]
+                x3 = x1[:]/x2[:]
+                e_col = 6.1078 * np.exp(x3) * units("millibar")
+                dp = metpy.calc.dewpoint(e_col)  # Dew point
+
+                t0_col = np.full((len(h_tet)), t00) * units("K")
+
+                mlcape = metpy.calc.mixed_layer_cape_cin(
+                    p_col * units("Pa"),
+                    t0_col,
+                    dp
+                )
+                print(mlcape[0].magnitude)
+                exit()
+
+                print(srh_mm)
+                print(srh_m[0].magnitude)
+                print(srh_m[1].magnitude)
+                print(srh)
+                """
+
+        print("srh")
+        th2 = time.time()
+        dt = th2 - th1
+        print(dt)
+
+    def copy_plugin(self, plugin, dims):
+        from meteo.helicity import compute_helicity
+        compute_helicity(self)
 
     def build_with_lock(self):
         f = open(self.lock_path, 'w')
