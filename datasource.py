@@ -1,5 +1,6 @@
 import os
 from styler import Styler
+from operator import itemgetter
 
 
 class DataSource:
@@ -15,21 +16,29 @@ class DataSource:
     def list_bands(self):
         return self.bands
 
-    ''' List tile layer ready to show '''
+    def list_tile_bands(self):
+        bands = []
+        for style_id in self.bands:
+            style = self.bands[style_id]
+            if style.get_band_key("label"):
+                z_priority = style.get_band_key("z-priority")
+                if z_priority is None:
+                    z_priority = 0
+                bands.append({
+                    "id": style.band_id,
+                    "label": style.get_band_key("label"),
+                    "layers": style.list_ready_layers(),
+                    "z_priority": z_priority
+                })
+
+        bands_sorted = sorted(bands, key=itemgetter("z_priority"), reverse=True)
+        return bands_sorted
+
     def list_tile_layers(self, band_id):
-        layers = []
+        """ List tile layer ready to show """
+
         if band_id not in self.bands:
             return None
 
         styler = self.bands[band_id]
-        layer_ids = styler.list_layers()
-        for layer_id in layer_ids:
-            nc_path = styler.get_nc_path(layer_id)
-            nc_lock_path = styler.get_nc_lock_path(layer_id)
-            if os.path.exists(nc_path):
-                if not os.path.exists(nc_lock_path):
-                    layers.append({
-                        'layer_id': layer_id,
-                        'tile_path': 'tiles/'+band_id+'/'+layer_id+'/{z}/{x}/{y}.png'
-                    })
-        return layers
+        return styler.list_ready_layers()

@@ -8,6 +8,11 @@ app = Flask(__name__)
 ds = DataSource()
 
 
+@app.route('/')
+def home():
+    return render_template("index.html")
+
+
 @app.route('/tiles/<band_id>/<layer_id>/<z>/<x>/<y>.png')
 def png_tile(band_id, layer_id, z, x, y):
 
@@ -35,6 +40,11 @@ def png_tile(band_id, layer_id, z, x, y):
         abort(404)
 
 
+@app.route('/api/weather/bands.json')
+def get_bands():
+    return jsonify(ds.list_tile_bands())
+
+
 @app.route('/api/weather/layers/<band_id>.json')
 def band_layers(band_id):
     return jsonify(ds.list_tile_layers(band_id))
@@ -42,4 +52,4 @@ def band_layers(band_id):
 
 if __name__ == "__main__":
     app.debug = True
-    app.run("0.0.0.0", 5005, threaded=True)
+    app.run("0.0.0.0", os.getenv("PORT", 5005), threaded=True)

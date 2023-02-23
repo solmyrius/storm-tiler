@@ -1,7 +1,9 @@
 {
   "band": {
     "type": "compute",
-    "plugin": "srh"
+    "plugin": "srh",
+    "label": "Storm relative helicity",
+    "z-priority": 100
   },
   "grid_file": {
     "path": "wrtest",

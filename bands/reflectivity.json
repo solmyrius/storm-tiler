@@ -1,6 +1,8 @@
 {
   "band": {
     "name": "REFL_10CM",
+    "label": "Radar reflectivity",
+    "z-priority": 60,
     "layer3d": 0
   },
   "grid_file": {

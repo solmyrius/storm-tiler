@@ -2,6 +2,8 @@
   "band": {
     "type": "winds",
     "display": "scalar",
+    "label": "Wind speed",
+    "z-priority": 20,
     "layer3d": 0,
     "math.mult": 3.6
   },
