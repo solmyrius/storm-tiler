@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import pytz
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
@@ -116,8 +117,8 @@ class Styler:
                     layers.append({
                         'layer_id': layer_id,
                         'layer_time': layer_time,
-                        'label': layer_time.strftime("%-d %B %Y %H:%M"),
-                        'model_label': "ICON-D2 @1K (15Z)<br />"+layer_time.strftime("%Y-%m-%d %H:%M"),
+                        'label': layer_time.astimezone(pytz.timezone("CET")).strftime("%-d %B %Y %H:%M"),
+                        'model_label': "ICON-D2 @1K (15Z)<br />"+layer_time.astimezone(pytz.timezone("CET")).strftime("%Y-%m-%d %H:%M"),
                         'tile_path': 'tiles/' + self.band_id + '/' + layer_id + '/{z}/{x}/{y}.png'
                     })
                     layer_times.append(layer_time)

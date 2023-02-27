@@ -306,7 +306,7 @@ class LayerSet {
 			for (i in layers_show){
 				var l_info = layers_show[i];
 				var lay = this._get_layer(l_info['band_id'], l_info['layer_id']);
-				if(lay.isLoading()){
+				if(lay && lay.isLoading()){
 					this._layers_switch.count ++;
 					L.DomEvent.on(lay, 'load', this._ls_one_finished, this);
 				}
@@ -340,7 +340,9 @@ class LayerSet {
 		for (i in this._layers_switch.to_hide){
 			var l_info = this._layers_switch.to_hide[i];
 			var lay = this._get_layer(l_info['band_id'], l_info['layer_id']);
-			lay.setOpacity(0.0);
+			if (lay) {
+				lay.setOpacity(0.0);
+			}
 		}
 
 		this._frame_id = this._layers_switch.frame;
@@ -386,7 +388,14 @@ class LayerSet {
 			}
 		}
 
-		return this._layers[band_id][layer_id]["layer"];
+		if (layer_id in this._layers[band_id]) {
+
+			return this._layers[band_id][layer_id]["layer"];
+
+		}else{
+
+			return null;
+		}
 	}
 }
 var meteo_layers = new LayerSet(map);
@@ -424,8 +433,8 @@ L.Control.StormPlayer = L.Control.extend({
 	_current_frame: null,
 	_frames: {},
 	_play_state: 'stopped',
-	_bt_url_play: '/static/images/play.svg',
-	_bt_url_pause: '/static/images/pause.svg',
+	_bt_url_play: 'static/images/play.svg',
+	_bt_url_pause: 'static/images/pause.svg',
 
 	onAdd: function(map) {
 
@@ -446,7 +455,7 @@ L.Control.StormPlayer = L.Control.extend({
 
 		this._div_ctrl_backward = L.DomUtil.create('div');
 		this._div_ctrl_backward.id = "mp-controls-backward";
-		this._div_ctrl_backward.innerHTML = '<img src="/static/images/backward.svg" />';
+		this._div_ctrl_backward.innerHTML = '<img src="static/images/backward.svg" />';
 
 		this._div_ctrl_play = L.DomUtil.create('div');
 		this._div_ctrl_play.id = "mp-controls-play";
@@ -455,7 +464,7 @@ L.Control.StormPlayer = L.Control.extend({
 
 		this._div_ctrl_forward = L.DomUtil.create('div');
 		this._div_ctrl_forward.id = "mp-controls-forward";
-		this._div_ctrl_forward.innerHTML = '<img src="/static/images/forward.svg" />';
+		this._div_ctrl_forward.innerHTML = '<img src="static/images/forward.svg" />';
 
 		this._div_pgw = L.DomUtil.create('div');
 		this._div_pgw.id = "mp-progressbar-wrap";
@@ -677,7 +686,7 @@ L.Control.StormLogo = L.Control.extend({
 
 		this._div = L.DomUtil.create('div');
 		this._div.id = "mp-storm-logo";
-		this._div.innerHTML = '<img src="/static/images/stormplatform_dark.svg" />';
+		this._div.innerHTML = '<img src="static/images/stormplatform_dark.svg" />';
 
         return this._div;
 	},
